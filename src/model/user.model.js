@@ -83,10 +83,7 @@ userSchema.pre('save', function (next) {
         this.password = encryptedPassword;
         next();
     }).catch((error) => {
-        return res.status(500).send({
-            status: false,
-            message: error.message
-        });
+        throw error;
     });
 });
 module.exports = mongoose.model('User', userSchema);

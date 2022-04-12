@@ -4,6 +4,12 @@ const userSchema = require('../model/user.model');
 
 const auth = async (req, res, next) => {
     const bearerToken = req.headers.authorization;
+    if (!bearerToken) {
+        return res.status(400).send({
+            status: false,
+            message: 'Bearer Token must be present'
+        });
+    }
     const token = bearerToken.split(" ")[1];
     const decodedToken = await jwtService.verifyToken(res, token);
     if (decodedToken != undefined) {

@@ -7,15 +7,8 @@ AWS.config.update({
     region: process.env.AWS_REGION
 });
 
-const uploadFile = (res, file) => {
+const uploadFile = (file) => {
     return new Promise((resolve, reject) => {
-        // if (file.mimetype.indexOf('image') == -1) {
-        //     res.status(400).send({
-        //         status: false,
-        //         message: 'Only image files are allowed !'
-        //     });
-        //     return false;
-        // }
         const S3 = new AWS.S3({
             apiVersion: '2006-03-01'
         });

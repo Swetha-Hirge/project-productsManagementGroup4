@@ -21,7 +21,7 @@ const createProduct = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return sendResponse(res, 400, false, 'Only image files are allowed !');
             }
-            const profile_url = await awsService.uploadFile(res, file[0]);
+            const profile_url = await awsService.uploadFile(file[0]);
             data.productImage = profile_url;
         }
         else {
@@ -88,8 +88,8 @@ const getProudcts = async (req, res) => {
                     $lt: data.priceLessThan
                 }
             }
-
-            console.log(queryData)
+            queryData.isDeleted = false;
+            queryData.deletedAt = null;
 
             const filterData = await productSchema.find(queryData).sort({
                 price: 1
@@ -113,6 +113,8 @@ const getProudcts = async (req, res) => {
             const fetchAllProducts = await productSchema.find({
                 isDeleted: false,
                 deletedAt: null
+            }).sort({
+                price: 1
             });
             if (fetchAllProducts.length == 0) {
                 return res.status(404).send({
@@ -159,7 +161,7 @@ const getProductById = async (req, res) => {
         }
 
         return res.status(200).send({
-            status: false,
+            status: true,
             message: "Success",
             data: productRes
         });
@@ -201,7 +203,7 @@ const updateProductById = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return sendResponse(res, 400, false, 'Only image files are allowed !');
             }
-            const profile_url = await awsService.uploadFile(res, file[0]);
+            const profile_url = await awsService.uploadFile(file[0]);
             data.productImage = profile_url;
         }
         const updateRes = await productSchema.findByIdAndUpdate(productId, data, {

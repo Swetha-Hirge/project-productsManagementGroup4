@@ -42,7 +42,7 @@ const register = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return sendResponse(res, 400, false, 'Only image files are allowed !');
             }
-            const profile_url = await awsService.uploadFile(res, file[0]);
+            const profile_url = await awsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         else {
@@ -55,7 +55,17 @@ const register = async (req, res) => {
             data: dataRes
         });
     } catch (error) {
-        errorService.httpError(res, error);
+        if (error['errors'] != null) {
+            const key = Object.keys(error['errors']);
+            return res.status(400).send({
+                status: false,
+                message: error['errors'][key[0]].message
+            });
+        }
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
     }
 }
 
@@ -166,11 +176,28 @@ const updateUserProfile = async (req, res) => {
         const data = req.body;
         const file = req.files;
 
+        if (data.email) {
+            if (!isEmail.validate(data.email)) {
+                return res.status(400).send({
+                    status: false,
+                    message: 'Enter a valid Email Id'
+                });
+            }
+        }
+        if (data.phone) {
+            const regex = /^[6789]\d{9}$/;
+            if (!regex.test(data.phone)) {
+                return res.status(400).send({
+                    status: false,
+                    message: 'The mobile number must be 10 digits and should be only Indian number'
+                });
+            }
+        }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return sendResponse(res, 400, false, 'Only image files are allowed !');
             }
-            const profile_url = await awsService.uploadFile(res, file[0]);
+            const profile_url = await awsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         const updateRes = await userSchema.findByIdAndUpdate(userId, data, {

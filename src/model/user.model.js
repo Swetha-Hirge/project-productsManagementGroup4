@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const isEmail = require('isemail');
 const uniqueValidator = require('mongoose-unique-validator');
 const bcrypt = require('bcrypt');
 
@@ -18,13 +17,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        unique: true,
-        validate: {
-            validator: (data) => {
-                return isEmail.validate(data);
-            },
-            message: 'Enter the valid Email Id'
-        }
+        unique: true
     },
     profileImage: {
         type: String,
@@ -34,8 +27,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        unique: true,
-        match: [/^[6789]\d{9}$/, 'The mobile number must be 10 digits and should be only Indian number']
+        unique: true
     },
     password: {
         type: String,

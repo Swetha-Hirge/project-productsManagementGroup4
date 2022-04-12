@@ -27,6 +27,15 @@ const register = async (req, res) => {
                     });
                 }
             }
+            else if (requiredFields[i].trim() == 'phone') {
+                const regex = /^[6789]\d{9}$/;
+                if (!regex.test(data.phone)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'The mobile number must be 10 digits and should be only Indian number'
+                    });
+                }
+            }
         }
 
         if (file && file.length > 0) {
@@ -46,17 +55,7 @@ const register = async (req, res) => {
             data: dataRes
         });
     } catch (error) {
-        if (error['errors'] != null) {
-            const key = Object.keys(error['errors']);
-            return res.status(400).send({
-                status: false,
-                message: error['errors'][key[0]].message
-            });
-        }
-        return res.status(500).send({
-            status: false,
-            message: error.message
-        });
+        errorService.httpError(res, error);
     }
 }
 

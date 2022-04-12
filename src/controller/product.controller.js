@@ -38,6 +38,103 @@ const createProduct = async (req, res) => {
     }
 }
 
+const getProudcts = async (req, res) => {
+    try {
+        const data = req.query;
+        const keys = Object.keys(data);
+        if (keys.length > 0) {
+            const requiredParams = ['size', 'name', 'priceGreaterThan', 'priceLessThan'];
+            let status = false;
+            for (let i = 0; i < keys.length; i++) {
+                if (!requiredParams.includes(keys[i])) {
+                    status = false;
+                    break;
+                }
+                else {
+                    status = true;
+                }
+            }
+            if (!status) {
+                return res.status(400).send({
+                    status: false,
+                    message: `Only these Query Params are allowed [${requiredParams.join(", ")}]`
+                });
+            }
+
+            let queryData = {};
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i] == 'size') {
+                    queryData.availableSizes = data.size;
+                }
+                else if (keys[i] == 'name') {
+                    queryData.title = {
+                        $regex: new RegExp(`${data.name}`)
+                    };
+                }
+                else if (keys[i] == 'priceGreaterThan') {
+                    queryData.price = {
+                        $gt: data.priceGreaterThan
+                    }
+                }
+                else if (keys[i] == 'priceLessThan') {
+                    queryData.price = {
+                        $lt: data.priceLessThan
+                    }
+                }
+            }
+            if (data['priceGreaterThan'] && data['priceLessThan']) {
+                queryData.price = {
+                    $gt: data.priceGreaterThan,
+                    $lt: data.priceLessThan
+                }
+            }
+
+            console.log(queryData)
+
+            const filterData = await productSchema.find(queryData).sort({
+                price: 1
+            });
+            if (filterData.length == 0) {
+                return res.status(404).send({
+                    status: false,
+                    message: 'Product not found !'
+                });
+            }
+
+            return res.status(200).send({
+                status: true,
+                message: 'fetch success',
+                count: filterData.length,
+                data: filterData
+            });
+
+        }
+        else {
+            const fetchAllProducts = await productSchema.find({
+                isDeleted: false,
+                deletedAt: null
+            });
+            if (fetchAllProducts.length == 0) {
+                return res.status(404).send({
+                    status: false,
+                    message: 'Product not found !'
+                });
+            }
+            return res.status(200).send({
+                status: true,
+                message: 'fetch success',
+                count: fetchAllProducts.length,
+                data: fetchAllProducts
+            });
+        }
+    } catch (error) {
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
+    }
+}
+
 const getProductById = async (req, res) => {
     try {
         const productId = req.params.productId;
@@ -181,6 +278,7 @@ const sendResponse = (res, status_code, status_s, message) => {
 }
 module.exports = {
     createProduct,
+    getProudcts,
     getProductById,
     updateProductById,
     deleteProductById

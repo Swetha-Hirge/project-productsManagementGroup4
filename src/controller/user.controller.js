@@ -3,15 +3,33 @@ const errorService = require('../service/error.service');
 const awsService = require('../service/aws.service');
 const jwtService = require('../service/jwt.service');
 const bcrypt = require('bcrypt');
+const isEmail = require('isemail');
 
 const register = async (req, res) => {
     try {
         const data = req.body;
         const file = req.files;
 
+        const requiredFields = ['fname', 'lname', 'email', 'phone', 'password', 'address.shipping.street', 'address.shipping.city', 'address.shipping.pincode', 'address.billing.street', 'address.billing.city', 'address.billing.pincode'];
+
+        for (let i = 0; i < requiredFields.length; i++) {
+            if (!data[requiredFields[i]] || !data[requiredFields[i]].trim()) {
+                return sendResponse(res, 400, false, `${requiredFields[i]} field is required`);
+            }
+            else if (data[requiredFields[i]].trim() == "null" || data[requiredFields[i]].trim() == "undefined") {
+                return sendResponse(res, 400, false, `${requiredFields[i]} must be a valid data`);
+            }
+        }
+
         if (file && file.length > 0) {
-            const profile_url = await awsService.uploadFile(file[0]);
+            if (file[0].mimetype.indexOf('image') == -1) {
+                return sendResponse(res, 400, false, 'Only image files are allowed !');
+            }
+            const profile_url = await awsService.uploadFile(res, file[0]);
             data.profileImage = profile_url;
+        }
+        else {
+            return sendResponse(res, 400, false, `profileImage field is required`);
         }
         const dataRes = await userSchema.create(data);
         return res.status(201).send({
@@ -20,9 +38,21 @@ const register = async (req, res) => {
             data: dataRes
         });
     } catch (error) {
-        errorService.httpError(res, error);
+        if (error['errors'] != null) {
+            const key = Object.keys(error['errors']);
+            key.reverse();
+            return res.status(400).send({
+                status: false,
+                message: error['errors'][key[0]].message
+            });
+        }
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
     }
 }
+
 const login = async (req, res) => {
     try {
         const data = req.body;
@@ -49,32 +79,40 @@ const login = async (req, res) => {
             });
         }
 
+        if (!isEmail.validate(email)) {
+            return res.status(400).send({
+                status: false,
+                message: 'Enter a valid Email Id'
+            });
+        }
+
         const userRes = await userSchema.findOne({
             email: email
         });
         if (!userRes) {
             return res.status(401).send({
                 status: false,
-                message: 'Invalid email and password [email]'
+                message: 'Invalid email Id'
             });
         }
 
-        const token = await jwtService.createToken(userRes._id);
-        if (token != undefined) {
-            return res.status(200).send({
-                status: true,
-                message: "User login success !",
-                data: {
-                    userId: userRes._id,
-                    token: token
-                }
-            });
-        }
         bcrypt.compare(password, userRes.password).then((result) => {
             if (!result) {
                 return res.status(401).send({
                     status: false,
-                    message: 'Invalid email and password [password]'
+                    message: 'Invalid email and password'
+                });
+            }
+
+            const token = jwtService.createToken(userRes._id);
+            if (token != undefined) {
+                return res.status(200).send({
+                    status: true,
+                    message: "User login success !",
+                    data: {
+                        userId: userRes._id,
+                        token: token
+                    }
                 });
             }
         }).catch((error) => {
@@ -82,7 +120,7 @@ const login = async (req, res) => {
                 status: false,
                 message: error.message
             });
-        });
+        });;
     } catch (error) {
         return res.status(500).send({
             status: false,
@@ -94,23 +132,6 @@ const login = async (req, res) => {
 const getUserProfile = async (req, res) => {
     try {
         const userId = req.params.userId;
-        if (!errorService.handleObjectId(userId)) {
-            return res.status(400).send({
-                status: false,
-                message: 'Only mongodb object id is allowed !'
-            });
-        }
-        const bearerToken = req.headers.authorization;
-        const token = bearerToken.split(" ")[1];
-        const decodedToken = await jwtService.verifyToken(res, token);
-
-        if (userId != decodedToken.userId) {
-            return res.status(403).send({
-                status: false,
-                message: 'You are not authorized !'
-            });
-        }
-
         const userRes = await userSchema.findById(userId);
         if (!userRes) {
             return res.status(404).send({
@@ -137,23 +158,15 @@ const updateUserProfile = async (req, res) => {
     try {
         const userId = req.params.userId;
         const data = req.body;
-        if (!errorService.handleObjectId(userId)) {
-            return res.status(400).send({
-                status: false,
-                message: 'Only mongodb object id is allowed !'
-            });
-        }
-        const bearerToken = req.headers.authorization;
-        const token = bearerToken.split(" ")[1];
-        const decodedToken = await jwtService.verifyToken(res, token);
+        const file = req.files;
 
-        if (userId != decodedToken.userId) {
-            return res.status(403).send({
-                status: false,
-                message: 'You are not authorized !'
-            });
+        if (file && file.length > 0) {
+            if (file[0].mimetype.indexOf('image') == -1) {
+                return sendResponse(res, 400, false, 'Only image files are allowed !');
+            }
+            const profile_url = await awsService.uploadFile(res, file[0]);
+            data.profileImage = profile_url;
         }
-
         const updateRes = await userSchema.findByIdAndUpdate(userId, data, {
             new: true
         });
@@ -177,6 +190,12 @@ const updateUserProfile = async (req, res) => {
     }
 }
 
+const sendResponse = (res, status_code, status_s, message) => {
+    res.status(status_code).send({
+        status: status_s,
+        message: message
+    });
+}
 module.exports = {
     register,
     login,

@@ -6,17 +6,17 @@ const bcrypt = require('bcrypt');
 const userSchema = new mongoose.Schema({
     fname: {
         type: String,
-        required: [true, 'The fname field is required'],
+        required: true,
         trim: true
     },
     lname: {
         type: String,
-        required: [true, 'The lname field is required'],
+        required: true,
         trim: true
     },
     email: {
         type: String,
-        required: [true, 'The email field is required'],
+        required: true,
         trim: true,
         unique: true,
         validate: {
@@ -28,18 +28,18 @@ const userSchema = new mongoose.Schema({
     },
     profileImage: {
         type: String,
-        required: [true, 'The profileImage field is required'],
+        required: true,
     },
     phone: {
         type: String,
-        required: [true, 'The mobile field is required'],
+        required: true,
         trim: true,
         unique: true,
         match: [/^[6789]\d{9}$/, 'The mobile number must be 10 digits and should be only Indian number']
     },
     password: {
         type: String,
-        required: [true, 'The password field is required'],
+        required: true,
         trim: true,
         minlength: [8, 'Minimum password length is 8'],
         maxlength: [15, 'Maximum password length should be 15']
@@ -48,29 +48,35 @@ const userSchema = new mongoose.Schema({
         shipping: {
             street: {
                 type: String,
-                required: [true, 'The Shipping address street field is required'],
+                required: true,
+                trim: true
             },
             city: {
                 type: String,
-                required: [true, 'The Shipping address city field is required'],
+                required: true,
+                trim: true
             },
             pincode: {
                 type: Number,
-                required: [true, 'The Shipping address pincode field is required'],
+                required: true,
+                trim: true
             }
         },
         billing: {
             street: {
                 type: String,
-                required: [true, 'The Billing address street field is required'],
+                required: true,
+                trim: true
             },
             city: {
                 type: String,
-                required: [true, 'The Billing address city field is required'],
+                required: true,
+                trim: true
             },
             pincode: {
                 type: Number,
-                required: [true, 'The Billing address pincode field is required'],
+                required: true,
+                trim: true
             }
         }
     }

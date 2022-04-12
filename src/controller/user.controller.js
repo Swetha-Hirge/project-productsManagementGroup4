@@ -19,6 +19,14 @@ const register = async (req, res) => {
             else if (data[requiredFields[i]].trim() == "null" || data[requiredFields[i]].trim() == "undefined") {
                 return sendResponse(res, 400, false, `${requiredFields[i]} must be a valid data`);
             }
+            else if (requiredFields[i].trim() == 'email') {
+                if (!isEmail.validate(data.email)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Enter a valid Email Id'
+                    });
+                }
+            }
         }
 
         if (file && file.length > 0) {
@@ -40,7 +48,6 @@ const register = async (req, res) => {
     } catch (error) {
         if (error['errors'] != null) {
             const key = Object.keys(error['errors']);
-            key.reverse();
             return res.status(400).send({
                 status: false,
                 message: error['errors'][key[0]].message

@@ -173,59 +173,59 @@ const updateUserProfile = async (req, res) => {
     try {
         const userId = req.params.userId;
         const data = req.body;
-        const file = req.files;
         const keys = Object.keys(data);
+        const file = req.files;
 
-        if (data.email) {
-            if (!isEmail.validate(data.email)) {
-                return res.status(400).send({
-                    status: false,
-                    message: 'Enter a valid Email Id'
-                });
-            }
-        }
-        if (data.phone) {
-            const regex = /^[6789]\d{9}$/;
-            if (!regex.test(data.phone)) {
-                return res.status(400).send({
-                    status: false,
-                    message: 'The mobile number must be 10 digits and should be only Indian number'
-                });
-            }
-        }
         for (let i = 0; i < keys.length; i++) {
-            if (keys[i] == 'address.shipping.pincode' || keys[i] == 'address.billing.pincode') {
-                const regex = /^\d{6}$/;
-                if (!regex.test(data[keys[i]])) {
-                    return res.status(400).send({
-                        status: false,
-                        message: `Enter the valid Pincode of ${keys[i]}`
-                    });
-                }
-            }
-        }
-        if (keys.includes('password')) {
-            if (data.password.length == 0) {
+            if (keys[i] == '_id') {
                 return res.status(400).send({
                     status: false,
-                    message: 'Password should not be empty'
+                    message: 'You are not able to update _id property'
                 });
             }
-            if (data.password) {
-                if (!(data.password.length > 8 && data.password.length <= 15)) {
+            else {
+                if (data[keys[i]].trim() == '') {
                     return res.status(400).send({
                         status: false,
-                        message: 'Minimum password should be 8 and maximum will be 15'
+                        message: `${keys[i]} should not be empty !`
                     });
                 }
-                data.password = bcrypt.hashSync(data.password, 10);
+                else if (keys[i] == 'email') {
+                    if (!isEmail.validate(data.email)) {
+                        return res.status(400).send({
+                            status: false,
+                            message: 'Enter a valid Email Id'
+                        });
+                    }
+                }
+                else if (keys[i] == 'phone') {
+                    const regex = /^[6789]\d{9}$/;
+                    if (!regex.test(data.phone)) {
+                        return res.status(400).send({
+                            status: false,
+                            message: 'The mobile number must be 10 digits and should be only Indian number'
+                        });
+                    }
+                }
+                else if (keys[i] == 'address.shipping.pincode' || keys[i] == 'address.billing.pincode') {
+                    const regex = /^\d{6}$/;
+                    if (!regex.test(data[keys[i]])) {
+                        return res.status(400).send({
+                            status: false,
+                            message: `Enter the valid Pincode of ${keys[i]}`
+                        });
+                    }
+                }
+                else if (keys[i] == 'password') {
+                    if (!(data.password.length > 8 && data.password.length <= 15)) {
+                        return res.status(400).send({
+                            status: false,
+                            message: 'Minimum password should be 8 and maximum will be 15'
+                        });
+                    }
+                    data.password = bcrypt.hashSync(data.password, 10);
+                }
             }
-        }
-        if (keys.includes('_id')) {
-            return res.status(400).send({
-                status: false,
-                message: 'You are not able to update _id property'
-            });
         }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {

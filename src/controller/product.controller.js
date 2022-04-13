@@ -178,6 +178,7 @@ const updateProductById = async (req, res) => {
     try {
         const productId = req.params.productId;
         const data = req.body;
+        const keys = Object.keys(data);
         const file = req.files;
 
         if (!errorService.handleObjectId(productId)) {
@@ -199,23 +200,54 @@ const updateProductById = async (req, res) => {
                 message: 'Product not found !'
             });
         }
-        const defaultSize = ["S", "XS", "M", "X", "L", "XXL", "XL"];
-        if (data.availableSizes.length > 0) {
-            let status = false;
-            for (let i = 0; i < data.availableSizes.length; i++) {
-                if (!defaultSize.includes(data.availableSizes[i])) {
-                    status = false;
-                    break;
-                }
-                else {
-                    status = true;
-                }
-            }
-            if (!status) {
+        for (let i = 0; i < keys.length; i++) {
+            if (keys[i] == '_id') {
                 return res.status(400).send({
                     status: false,
-                    message: `Only these Query Params are allowed [${defaultSize.join(", ")}]`
+                    message: 'You are not able to update _id property'
                 });
+            }
+            else {
+                if (keys[i] == 'availableSizes') {
+                    for (let j = 0; j < data[keys[i]].length; j++) {
+                        if (data[keys[i]][j].trim() == '') {
+                            return res.status(400).send({
+                                status: false,
+                                message: `availableSizes should not be empty !`
+                            });
+                        }
+                        else {
+                            const defaultSize = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+                            if (data.availableSizes.length > 0) {
+                                let status = false;
+                                for (let i = 0; i < data.availableSizes.length; i++) {
+                                    if (!defaultSize.includes(data.availableSizes[i])) {
+                                        status = false;
+                                        break;
+                                    }
+                                    else {
+                                        status = true;
+                                    }
+                                }
+                                if (!status) {
+                                    return res.status(400).send({
+                                        status: false,
+                                        message: `Only these Query Params are allowed [${defaultSize.join(", ")}]`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (data[keys[i]].trim() == '') {
+                        return res.status(400).send({
+                            status: false,
+                            message: `${keys[i]} should not be empty !`
+                        });
+                    }
+                }
+
             }
         }
         if (file && file.length > 0) {
@@ -290,7 +322,6 @@ const deleteProductById = async (req, res) => {
         });
     }
 }
-
 const sendResponse = (res, status_code, status_s, message) => {
     res.status(status_code).send({
         status: status_s,

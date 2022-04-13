@@ -36,6 +36,15 @@ const register = async (req, res) => {
                     });
                 }
             }
+            else if (requiredFields[i].trim() == 'address.shipping.pincode' || requiredFields[i].trim() == 'address.billing.pincode') {
+                const regex = /^\d{6}$/;
+                if (!regex.test(data[requiredFields[i]])) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `Enter the valid Pincode of ${requiredFields[i]}`
+                    });
+                }
+            }
         }
 
         if (file && file.length > 0) {
@@ -55,17 +64,7 @@ const register = async (req, res) => {
             data: dataRes
         });
     } catch (error) {
-        if (error['errors'] != null) {
-            const key = Object.keys(error['errors']);
-            return res.status(400).send({
-                status: false,
-                message: error['errors'][key[0]].message
-            });
-        }
-        return res.status(500).send({
-            status: false,
-            message: error.message
-        });
+        errorService.httpError(res, error);
     }
 }
 
@@ -175,6 +174,7 @@ const updateUserProfile = async (req, res) => {
         const userId = req.params.userId;
         const data = req.body;
         const file = req.files;
+        const keys = Object.keys(data);
 
         if (data.email) {
             if (!isEmail.validate(data.email)) {
@@ -192,6 +192,40 @@ const updateUserProfile = async (req, res) => {
                     message: 'The mobile number must be 10 digits and should be only Indian number'
                 });
             }
+        }
+        for (let i = 0; i < keys.length; i++) {
+            if (keys[i] == 'address.shipping.pincode' || keys[i] == 'address.billing.pincode') {
+                const regex = /^\d{6}$/;
+                if (!regex.test(data[keys[i]])) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `Enter the valid Pincode of ${keys[i]}`
+                    });
+                }
+            }
+        }
+        if (keys.includes('password')) {
+            if (data.password.length == 0) {
+                return res.status(400).send({
+                    status: false,
+                    message: 'Password should not be empty'
+                });
+            }
+            if (data.password) {
+                if (!(data.password.length > 8 && data.password.length <= 15)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Minimum password should be 8 and maximum will be 15'
+                    });
+                }
+                data.password = bcrypt.hashSync(data.password, 10);
+            }
+        }
+        if (keys.includes('_id')) {
+            return res.status(400).send({
+                status: false,
+                message: 'You are not able to update _id property'
+            });
         }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
@@ -214,6 +248,12 @@ const updateUserProfile = async (req, res) => {
             return res.status(400).send({
                 status: false,
                 message: `[${error['keyValue'][key]}] ${key} is already exist ! `
+            });
+        }
+        if (error.name == 'CastError') {
+            return res.status(400).send({
+                status: false,
+                message: error.message
             });
         }
         return res.status(500).send({

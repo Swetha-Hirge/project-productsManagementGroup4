@@ -199,6 +199,25 @@ const updateProductById = async (req, res) => {
                 message: 'Product not found !'
             });
         }
+        const defaultSize = ["S", "XS", "M", "X", "L", "XXL", "XL"];
+        if (data.availableSizes.length > 0) {
+            let status = false;
+            for (let i = 0; i < data.availableSizes.length; i++) {
+                if (!defaultSize.includes(data.availableSizes[i])) {
+                    status = false;
+                    break;
+                }
+                else {
+                    status = true;
+                }
+            }
+            if (!status) {
+                return res.status(400).send({
+                    status: false,
+                    message: `Only these Query Params are allowed [${defaultSize.join(", ")}]`
+                });
+            }
+        }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return sendResponse(res, 400, false, 'Only image files are allowed !');

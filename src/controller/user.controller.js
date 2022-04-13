@@ -1,5 +1,4 @@
 const userSchema = require('../model/user.model');
-const errorService = require('../service/error.service');
 const awsService = require('../service/aws.service');
 const jwtService = require('../service/jwt.service');
 const bcrypt = require('bcrypt');
@@ -14,20 +13,35 @@ const register = async (req, res) => {
 
         for (let i = 0; i < requiredFields.length; i++) {
             if (!data[requiredFields[i]] || !data[requiredFields[i]].trim()) {
-                return sendResponse(res, 400, false, `${requiredFields[i]} field is required`);
+                return res.status(400).send({
+                    status: false,
+                    message: `${requiredFields[i]} field is required`
+                });
             }
             else if (data[requiredFields[i]].trim() == "null" || data[requiredFields[i]].trim() == "undefined") {
-                return sendResponse(res, 400, false, `${requiredFields[i]} must be a valid data`);
+                return res.status(400).send({
+                    status: false,
+                    message: `${requiredFields[i]} must be a valid data`
+                });
             }
-            else if (requiredFields[i].trim() == 'email') {
+            else if (requiredFields[i] == 'email') {
                 if (!isEmail.validate(data.email)) {
                     return res.status(400).send({
                         status: false,
                         message: 'Enter a valid Email Id'
                     });
                 }
+                const checkEmail = await userSchema.findOne({
+                    email: data.email
+                });
+                if (checkEmail != null) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Email is already exist'
+                    });
+                }
             }
-            else if (requiredFields[i].trim() == 'phone') {
+            else if (requiredFields[i] == 'phone') {
                 const regex = /^[6789]\d{9}$/;
                 if (!regex.test(data.phone)) {
                     return res.status(400).send({
@@ -35,8 +49,26 @@ const register = async (req, res) => {
                         message: 'The mobile number must be 10 digits and should be only Indian number'
                     });
                 }
+                const checkPhone = await userSchema.findOne({
+                    phone: data.phone
+                });
+                if (checkPhone != null) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Phone is already exist'
+                    });
+                }
             }
-            else if (requiredFields[i].trim() == 'address.shipping.pincode' || requiredFields[i].trim() == 'address.billing.pincode') {
+            else if (requiredFields[i] == 'password') {
+                if (!(data.password.length >= 8 && data.password.length <= 15)) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Minimum password should be 8 and maximum will be 15'
+                    });
+                }
+                data.password = bcrypt.hashSync(data.password, 10);
+            }
+            else if (requiredFields[i] == 'address.shipping.pincode' || requiredFields[i] == 'address.billing.pincode') {
                 const regex = /^\d{6}$/;
                 if (!regex.test(data[requiredFields[i]])) {
                     return res.status(400).send({
@@ -49,13 +81,19 @@ const register = async (req, res) => {
 
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
-                return sendResponse(res, 400, false, 'Only image files are allowed !');
+                return res.status(400).send({
+                    status: false,
+                    message: 'Only image files are allowed !'
+                });
             }
             const profile_url = await awsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         else {
-            return sendResponse(res, 400, false, `profileImage field is required`);
+            return res.status(400).send({
+                status: false,
+                message: `profileImage field is required`
+            });
         }
         const dataRes = await userSchema.create(data);
         return res.status(201).send({
@@ -64,7 +102,10 @@ const register = async (req, res) => {
             data: dataRes
         });
     } catch (error) {
-        errorService.httpError(res, error);
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
     }
 }
 
@@ -217,7 +258,7 @@ const updateUserProfile = async (req, res) => {
                     }
                 }
                 else if (keys[i] == 'password') {
-                    if (!(data.password.length > 8 && data.password.length <= 15)) {
+                    if (!(data.password.length >= 8 && data.password.length <= 15)) {
                         return res.status(400).send({
                             status: false,
                             message: 'Minimum password should be 8 and maximum will be 15'
@@ -229,7 +270,10 @@ const updateUserProfile = async (req, res) => {
         }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
-                return sendResponse(res, 400, false, 'Only image files are allowed !');
+                return res.status(400).send({
+                    status: false,
+                    message: 'Only image files are allowed !'
+                });
             }
             const profile_url = await awsService.uploadFile(file[0]);
             data.profileImage = profile_url;
@@ -263,12 +307,6 @@ const updateUserProfile = async (req, res) => {
     }
 }
 
-const sendResponse = (res, status_code, status_s, message) => {
-    res.status(status_code).send({
-        status: status_s,
-        message: message
-    });
-}
 module.exports = {
     register,
     login,

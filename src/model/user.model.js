@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
-const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
     fname: {
@@ -32,9 +30,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        trim: true,
-        minlength: [8, 'Minimum password length is 8'],
-        maxlength: [15, 'Maximum password length should be 15']
+        trim: true
     },
     address: {
         shipping: {
@@ -74,16 +70,5 @@ const userSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
-});
-uniqueValidator.defaults.message = "The {PATH} is already exist !";
-userSchema.plugin(uniqueValidator);
-
-userSchema.pre('save', function (next) {
-    bcrypt.hash(this.password, 10).then((encryptedPassword) => {
-        this.password = encryptedPassword;
-        next();
-    }).catch((error) => {
-        throw error;
-    });
 });
 module.exports = mongoose.model('User', userSchema);

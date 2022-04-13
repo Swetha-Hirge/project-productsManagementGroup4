@@ -1,7 +1,10 @@
 const productSchema = require('../model/product.model');
-const errorService = require('../service/error.service');
 const awsService = require('../service/aws.service');
+const mongoose = require('mongoose');
 
+const handleObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+}
 const createProduct = async (req, res) => {
     try {
         const data = req.body;
@@ -11,21 +14,33 @@ const createProduct = async (req, res) => {
 
         for (let i = 0; i < requiredFields.length; i++) {
             if (!data[requiredFields[i]] || !data[requiredFields[i]].trim()) {
-                return sendResponse(res, 400, false, `${requiredFields[i]} field is required`);
+                return res.status(400).send({
+                    status: false,
+                    message: `${requiredFields[i]} field is required`
+                });
             }
             else if (data[requiredFields[i]].trim() == "null" || data[requiredFields[i]].trim() == "undefined") {
-                return sendResponse(res, 400, false, `${requiredFields[i]} must be a valid data`);
+                return res.status(400).send({
+                    status: false,
+                    message: `${requiredFields[i]} must be a valid data`
+                });
             }
         }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
-                return sendResponse(res, 400, false, 'Only image files are allowed !');
+                return res.status(400).send({
+                    status: false,
+                    message: 'Only image files are allowed !'
+                });
             }
             const profile_url = await awsService.uploadFile(file[0]);
             data.productImage = profile_url;
         }
         else {
-            return sendResponse(res, 400, false, `Product Image field is required`);
+            return res.status(400).send({
+                status: false,
+                message: `Product Image field is required`
+            });
         }
         const insertRes = await productSchema.create(data);
         return res.status(201).send({
@@ -34,7 +49,18 @@ const createProduct = async (req, res) => {
             data: insertRes
         });
     } catch (error) {
-        errorService.httpError(res, error);
+        if (error['errors'] != null) {
+            const key = Object.keys(error['errors']);
+            key.reverse();
+            return res.status(400).send({
+                status: false,
+                message: error['errors'][key[0]].message
+            });
+        }
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
     }
 }
 
@@ -140,7 +166,7 @@ const getProudcts = async (req, res) => {
 const getProductById = async (req, res) => {
     try {
         const productId = req.params.productId;
-        if (!errorService.handleObjectId(productId)) {
+        if (!handleObjectId(productId)) {
             return res.status(400).send({
                 status: false,
                 message: 'Only mongodb object id is allowed !'
@@ -181,7 +207,7 @@ const updateProductById = async (req, res) => {
         const keys = Object.keys(data);
         const file = req.files;
 
-        if (!errorService.handleObjectId(productId)) {
+        if (!handleObjectId(productId)) {
             return res.status(400).send({
                 status: false,
                 message: 'Only mongodb object id is allowed !'
@@ -252,7 +278,10 @@ const updateProductById = async (req, res) => {
         }
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
-                return sendResponse(res, 400, false, 'Only image files are allowed !');
+                return res.status(400).send({
+                    status: false,
+                    message: 'Only image files are allowed !'
+                });
             }
             const profile_url = await awsService.uploadFile(file[0]);
             data.productImage = profile_url;
@@ -284,7 +313,7 @@ const deleteProductById = async (req, res) => {
     try {
         const productId = req.params.productId;
 
-        if (!errorService.handleObjectId(productId)) {
+        if (!handleObjectId(productId)) {
             return res.status(400).send({
                 status: false,
                 message: 'Only mongodb object id is allowed !'
@@ -321,12 +350,6 @@ const deleteProductById = async (req, res) => {
             message: error.message
         });
     }
-}
-const sendResponse = (res, status_code, status_s, message) => {
-    res.status(status_code).send({
-        status: status_s,
-        message: message
-    });
 }
 module.exports = {
     createProduct,

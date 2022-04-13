@@ -1,6 +1,11 @@
 const jwtService = require('../service/jwt.service');
-const errorService = require('../service/error.service');
 const userSchema = require('../model/user.model');
+
+const mongoose = require('mongoose');
+
+const handleObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+}
 
 const auth = async (req, res, next) => {
     const bearerToken = req.headers.authorization;
@@ -26,7 +31,7 @@ const auth = async (req, res, next) => {
 
 const authorization = async (req, res, next) => {
     const userId = req.params.userId;
-    if (!errorService.handleObjectId(userId)) {
+    if (!handleObjectId(userId)) {
         return res.status(400).send({
             status: false,
             message: 'Only mongodb object id is allowed !'

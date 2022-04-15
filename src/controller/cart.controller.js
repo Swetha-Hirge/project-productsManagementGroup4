@@ -79,6 +79,12 @@ const createCart = async (req, res) => {
             'userId': data.userId
         });
         if (fetchCart) {
+            if (keys.length == 1) {
+                return res.status(400).send({
+                    status: false,
+                    message: "Your empty cart is already created please add a product"
+                });
+            }
             let status = false;
             const previousItems = [];
             for (let i = 0; i < fetchCart.items.length; i++) {
@@ -101,7 +107,11 @@ const createCart = async (req, res) => {
                         {
                             new: true
                         }
-                    );
+                    ).select({
+                        items: {
+                            _id: 0
+                        }
+                    });
                     return res.status(201).send({
                         status: false,
                         message: "success",
@@ -128,7 +138,11 @@ const createCart = async (req, res) => {
                     {
                         new: true
                     }
-                );
+                ).select({
+                    items: {
+                        _id: 0
+                    }
+                });
                 return res.status(201).send({
                     status: false,
                     message: "success",
@@ -291,7 +305,6 @@ const updateCart = async (req, res) => {
                         }
                         else {
                             previousItems.push(cartRes.items[i]);
-                            productPrice = cartRes.totalPrice;
                         }
                     }
                     if (!productStatus) {
@@ -308,7 +321,11 @@ const updateCart = async (req, res) => {
                         items: previousItems
                     }, {
                         new: true
-                    });
+                    }).select({
+                        items: {
+                            _id: 0
+                        }
+                    });;
                     return res.status(200).send({
                         status: false,
                         message: "success",
@@ -323,9 +340,74 @@ const updateCart = async (req, res) => {
                 });
             }
         }
+    } catch (error) {
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
+    }
+}
 
+const getCart = async (req, res) => {
+    try {
+        const cartRes = await cartSchema.findOne({
+            userId: req.params.userId
+        }).select({
+            items: {
+                _id: 0
+            }
+        });
+        if (!cartRes) {
+            return res.status(400).send({
+                status: false,
+                message: 'Cart not found !'
+            });
+        }
+        if (cartRes.totalItems == 0 && cartRes.totalPrice == 0) {
+            return res.status(404).send({
+                status: true,
+                message: 'Cart not found'
+            });
+        }
 
+        return res.status(200).send({
+            status: true,
+            message: "success",
+            data: cartRes
+        });
+    } catch (error) {
+        return res.status(500).send({
+            status: false,
+            message: error.message
+        });
+    }
+}
 
+const deleteCart = async (req, res) => {
+    try {
+        const cartRes = await cartSchema.findOne({
+            userId: req.params.userId
+        });
+        if (!cartRes) {
+            return res.status(400).send({
+                status: false,
+                message: 'Cart not found !'
+            });
+        }
+        const deleteRes = await cartSchema.findOneAndUpdate({
+            userId: req.params.userId
+        },
+            {
+                totalItems: 0,
+                totalPrice: 0,
+                items: []
+            }
+        );
+
+        return res.status(204).send({
+            status: true,
+            message: "Delete cart success"
+        });
     } catch (error) {
         return res.status(500).send({
             status: false,
@@ -336,5 +418,7 @@ const updateCart = async (req, res) => {
 
 module.exports = {
     createCart,
-    updateCart
+    updateCart,
+    getCart,
+    deleteCart
 }

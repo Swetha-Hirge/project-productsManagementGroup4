@@ -21,6 +21,7 @@ router.delete('/products/:productId', productController.deleteProductById);
 
 router.post('/users/:userId/cart', authMiddleware.auth, authMiddleware.authorization, cartController.createCart);
 router.put('/users/:userId/cart', authMiddleware.auth, authMiddleware.authorization, cartController.updateCart);
-
+router.get('/users/:userId/cart', authMiddleware.auth, authMiddleware.authorization, cartController.getCart);
+router.delete('/users/:userId/cart', authMiddleware.auth, authMiddleware.authorization, cartController.deleteCart);
 
 module.exports = router; 

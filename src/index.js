@@ -11,7 +11,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer().any());
 
-mongoose.connect(process.env.MONGO_DB_CLUSTER).then(() => {
+mongoose.connect(process.env.MONGO_DB_CLUSTER, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
     console.log("MongoDB connected");
 }).catch((error) => {
     console.log(error.message)

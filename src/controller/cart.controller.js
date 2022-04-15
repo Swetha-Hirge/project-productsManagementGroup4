@@ -169,17 +169,20 @@ const updateCart = async (req, res) => {
         const keys = Object.keys(data);
         const requiredParams = ['cartId', 'productId', 'removeProduct'];
 
+        for (let i = 0; i < requiredParams.length; i++) {
+            if (!data[requiredParams[i]] && data[requiredParams[i]] == undefined) {
+                return res.status(400).send({
+                    status: false,
+                    message: `${requiredParams[i]} field is required`
+                });
+            }
+        }
+
         for (let i = 0; i < keys.length; i++) {
             if (!requiredParams.includes(keys[i])) {
                 return res.status(400).send({
                     status: false,
                     message: `Only these body params are allowed ${requiredParams.join(", ")}`
-                });
-            }
-            if (!data[requiredParams[i]]) {
-                return res.status(400).send({
-                    status: false,
-                    message: `${requiredParams[i]} field is required`
                 });
             }
             if (keys[i] == 'cartId' || keys[i] == 'productId') {
@@ -191,34 +194,135 @@ const updateCart = async (req, res) => {
                 }
             }
         }
-
-        const cartRes = await cartSchema.findById(data.cartId);
-        if (!cartRes) {
-            return res.status(400).send({
-                status: false,
-                message: 'Cart not found !'
-            });
-        }
-        const previousItems = [];
-        for (let i = 0; i < cartRes.items.length; i++) {
-            if (cartRes.items[i].productId == data.productId) {
-                previousItems.push({
-                    productId: data.productId,
-                    quantity: cartRes.items[i].quantity - 1
+        if (data.removeProduct || data.removeProduct == 0) {
+            if (typeof data.removeProduct != "number") {
+                return res.status(400).send({
+                    status: false,
+                    message: 'Only number datatypes are allowed !'
                 });
             }
+            if (data.removeProduct == 0 || data.removeProduct == 1) {
+                const cartRes = await cartSchema.findById(data.cartId);
+                if (!cartRes) {
+                    return res.status(400).send({
+                        status: false,
+                        message: 'Cart not found !'
+                    });
+                }
+
+                if (data.removeProduct == 0) {
+                    const previousItems = [];
+                    let removePrice = 0;
+                    let productStatus = false;
+                    for (let i = 0; i < cartRes.items.length; i++) {
+                        if (cartRes.items[i].productId == data.productId) {
+                            productStatus = true;
+                            const productRes = await productSchema.findOne({
+                                '_id': data.productId,
+                                isDeleted: false,
+                                deletedAt: null
+                            });
+
+                            if (!productRes) {
+                                return res.status(400).send({
+                                    status: false,
+                                    message: 'Product not found'
+                                });
+                            }
+                            removePrice = productRes.price * cartRes.items[i].quantity;
+                        }
+                        else {
+                            // productStatus = false;
+                            previousItems.push(cartRes.items[i]);
+                            productPrice = cartRes.totalPrice;
+                        }
+                    }
+                    productPrice = cartRes.totalPrice - removePrice;
+                    if (!productStatus) {
+                        return res.status(400).send({
+                            status: false,
+                            message: 'Product not found in the Cart!'
+                        });
+                    }
+                    const removeRes = await cartSchema.findOneAndUpdate({
+                        productId: data.productId
+                    }, {
+                        totalPrice: productPrice,
+                        totalItems: previousItems.length,
+                        items: previousItems
+                    }, {
+                        new: true
+                    });
+                    return res.status(200).send({
+                        status: false,
+                        message: "Remove success",
+                        data: removeRes
+                    });
+                }
+                else {
+                    const previousItems = [];
+                    let productPrice = 0;
+                    let productStatus = false;
+                    for (let i = 0; i < cartRes.items.length; i++) {
+                        if (cartRes.items[i].productId == data.productId) {
+                            productStatus = true;
+                            const productRes = await productSchema.findOne({
+                                '_id': data.productId,
+                                isDeleted: false,
+                                deletedAt: null
+                            });
+
+                            if (!productRes) {
+                                return res.status(400).send({
+                                    status: false,
+                                    message: 'Product not found'
+                                });
+                            }
+                            if (cartRes.items[i].quantity == 1) {
+                                productPrice = cartRes.totalPrice - productRes.price;
+                            }
+                            else {
+                                previousItems.push({
+                                    productId: data.productId,
+                                    quantity: cartRes.items[i].quantity - 1
+                                });
+                                productPrice = cartRes.totalPrice - productRes.price;
+                            }
+                        }
+                        else {
+                            previousItems.push(cartRes.items[i]);
+                            productPrice = cartRes.totalPrice;
+                        }
+                    }
+                    if (!productStatus) {
+                        return res.status(400).send({
+                            status: false,
+                            message: 'Product not found in the Cart!'
+                        });
+                    }
+                    const reduceRes = await cartSchema.findOneAndUpdate({
+                        productId: data.productId
+                    }, {
+                        totalPrice: productPrice,
+                        totalItems: previousItems.length,
+                        items: previousItems
+                    }, {
+                        new: true
+                    });
+                    return res.status(200).send({
+                        status: false,
+                        message: "success",
+                        data: reduceRes
+                    });
+                }
+            }
             else {
-                previousItems.push(cartRes.items[i]);
+                return res.status(400).send({
+                    status: false,
+                    message: 'removeProduct field contains only 0 or 1 !'
+                });
             }
         }
-        const reduceRes = await cartSchema.findOneAndUpdate({
-            productId: data.productId
-        }, {
-            items: previousItems
-        }, {
-            new: true
-        });
-        res.send(reduceRes)
 
 
 

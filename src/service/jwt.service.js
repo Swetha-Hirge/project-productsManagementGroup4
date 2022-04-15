@@ -4,7 +4,7 @@ require('dotenv').config();
 const create = (userId) => {
     return jwt.sign({
         userId: userId
-    }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    }, process.env.JWT_SECRET, { expiresIn: '5h' });
 }
 
 const verify = (res, token) => {

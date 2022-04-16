@@ -41,7 +41,10 @@ const productSchema = new mongoose.Schema({
             message: 'Only these sizes are allowed ["S", "XS", "M", "X", "L", "XXL", "XL"]'
         }
     },
-    installments: Number,
+    installments: {
+        type: Number,
+        default: 0
+    },
     deletedAt: {
         type: Date,
         default: null

@@ -94,35 +94,35 @@ const createCart = async (req, res) => {
                         productId: fetchCart.items[i].productId,
                         quantity: fetchCart.items[i].quantity + (data.items.quantity || 1)
                     });
-                    const dataRes = await cartSchema.findOneAndUpdate(
-                        {
-                            userId: data.userId
-                        },
-                        {
-                            items: previousItems,
-                            $inc: {
-                                totalPrice: + price * (data.items.quantity || 1)
-                            }
-                        },
-                        {
-                            new: true
-                        }
-                    ).select({
-                        items: {
-                            _id: 0
-                        }
-                    });
-                    return res.status(201).send({
-                        status: false,
-                        message: "success",
-                        data: dataRes
-                    });
                 }
                 else {
-                    status = false;
                     previousItems.push(fetchCart.items[i]);
                 }
             }
+            const dataRes = await cartSchema.findOneAndUpdate(
+                {
+                    userId: data.userId
+                },
+                {
+                    items: previousItems,
+                    $inc: {
+                        totalPrice: + price * (data.items.quantity || 1)
+                    }
+                },
+                {
+                    new: true
+                }
+            ).select({
+                items: {
+                    _id: 0
+                }
+            });
+
+            return res.status(201).send({
+                status: false,
+                message: "success",
+                data: dataRes
+            });
             if (!status) {
                 const appendItems = [...fetchCart.items, data.items];
                 const updatedPrice = fetchCart.totalPrice + price * (data.items.quantity || 1);

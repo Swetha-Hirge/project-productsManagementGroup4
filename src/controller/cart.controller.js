@@ -24,6 +24,12 @@ const createCart = async (req, res) => {
                 message: 'Only mongodb object id is allowed !'
             });
         }
+        if (data.userId != req.params.userId) {
+            return res.status(400).send({
+                status: false,
+                message: 'userId must be same as route'
+            });
+        }
         const requiredParams = ['userId', 'items'];
         for (let i = 0; i < keys.length; i++) {
             if (!requiredParams.includes(keys[i])) {
@@ -99,31 +105,34 @@ const createCart = async (req, res) => {
                     previousItems.push(fetchCart.items[i]);
                 }
             }
-            const dataRes = await cartSchema.findOneAndUpdate(
-                {
-                    userId: data.userId
-                },
-                {
-                    items: previousItems,
-                    $inc: {
-                        totalPrice: + price * (data.items.quantity || 1)
+            if (status) {
+                const dataRes = await cartSchema.findOneAndUpdate(
+                    {
+                        userId: data.userId
+                    },
+                    {
+                        items: previousItems,
+                        $inc: {
+                            totalPrice: + price * (data.items.quantity || 1)
+                        }
+                    },
+                    {
+                        new: true
                     }
-                },
-                {
-                    new: true
-                }
-            ).select({
-                items: {
-                    _id: 0
-                }
-            });
+                ).select({
+                    items: {
+                        _id: 0
+                    }
+                });
 
-            return res.status(201).send({
-                status: false,
-                message: "success",
-                data: dataRes
-            });
-            if (!status) {
+                return res.status(201).send({
+                    status: false,
+                    message: "success",
+                    data: dataRes
+                });
+
+            }
+            else {
                 const appendItems = [...fetchCart.items, data.items];
                 const updatedPrice = fetchCart.totalPrice + price * (data.items.quantity || 1);
                 const dataRes = await cartSchema.findOneAndUpdate(

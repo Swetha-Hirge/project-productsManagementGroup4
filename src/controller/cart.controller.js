@@ -126,7 +126,7 @@ const createCart = async (req, res) => {
                 });
 
                 return res.status(201).send({
-                    status: false,
+                    status: true,
                     message: "success",
                     data: dataRes
                 });
@@ -173,7 +173,7 @@ const createCart = async (req, res) => {
             data.totalPrice = price
             const cartRes = await cartSchema.create(data);
             return res.status(201).send({
-                status: false,
+                status: true,
                 message: "success",
                 data: cartRes
             });
@@ -277,7 +277,7 @@ const updateCart = async (req, res) => {
                         new: true
                     });
                     return res.status(200).send({
-                        status: false,
+                        status: true,
                         message: "Remove success",
                         data: removeRes
                     });
@@ -336,7 +336,7 @@ const updateCart = async (req, res) => {
                         }
                     });;
                     return res.status(200).send({
-                        status: false,
+                        status: true,
                         message: "success",
                         data: reduceRes
                     });

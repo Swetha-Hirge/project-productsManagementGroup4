@@ -73,6 +73,18 @@ const updateOrder = async (req, res) => {
                 });
             }
         }
+        if (orderRes.status == 'completed') {
+            return res.status(200).send({
+                status: true,
+                message: 'Order is already completed'
+            });
+        }
+        if (orderRes.status == 'cancelled') {
+            return res.status(200).send({
+                status: true,
+                message: 'Order is already cancelled'
+            });
+        }
         const updateRes = await orderSchema.findByIdAndUpdate(data.orderId, {
             status: data.status
         },

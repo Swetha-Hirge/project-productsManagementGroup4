@@ -29,8 +29,8 @@ const orderSchema = new mongoose.Schema({
         type: String,
         default: 'pending',
         enum: {
-            values: ['pending', 'completed', 'cancled'],
-            message: "Only these status are allowed ['pending', 'completed', 'cancled']"
+            values: ['pending', 'completed', 'cancelled'],
+            message: "Only these status are allowed ['pending', 'completed', 'cancelled']"
         }
     },
     deletedAt: {

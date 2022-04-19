@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer().any());
 
-mongoose.connect(process.env.MONGO_DB_CLUSTER, {
+mongoose.connect("mongodb+srv://prakash_93:nzdQ9yMSM6uWLxcM@cluster0.fg71d.mongodb.net/group4Database?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {

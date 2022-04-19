@@ -7,7 +7,14 @@ const isEmail = require('isemail');
 const register = async (req, res) => {
     try {
         const data = req.body;
+        const keys = Object.keys(data);
         const file = req.files;
+        if (keys.length == 0) {
+            return res.status(400).send({
+                status: false,
+                message: "Body should not be an empty"
+            });
+        }
 
         const requiredFields = ['fname', 'lname', 'email', 'phone', 'password', 'address.shipping.street', 'address.shipping.city', 'address.shipping.pincode', 'address.billing.street', 'address.billing.city', 'address.billing.pincode'];
 
@@ -216,6 +223,13 @@ const updateUserProfile = async (req, res) => {
         const data = req.body;
         const keys = Object.keys(data);
         const file = req.files;
+
+        if (keys.length == 0) {
+            return res.status(400).send({
+                status: false,
+                message: "No any changes"
+            });
+        }
 
         for (let i = 0; i < keys.length; i++) {
             if (keys[i] == '_id') {

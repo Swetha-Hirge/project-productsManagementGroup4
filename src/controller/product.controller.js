@@ -213,6 +213,13 @@ const updateProductById = async (req, res) => {
                 message: 'Only mongodb object id is allowed !'
             });
         }
+
+        if (keys.length == 0) {
+            return res.status(400).send({
+                status: false,
+                message: "No any changes"
+            });
+        }
         const productRes = await productSchema.findById(productId);
         if (!productRes) {
             return res.status(404).send({

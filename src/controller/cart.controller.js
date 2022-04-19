@@ -193,7 +193,8 @@ const updateCart = async (req, res) => {
         const requiredParams = ['cartId', 'productId', 'removeProduct'];
 
         for (let i = 0; i < requiredParams.length; i++) {
-            if (!data[requiredParams[i]] && data[requiredParams[i]] == undefined) {
+            // !data[requiredParams[i]] && data[requiredParams[i]] == undefined
+            if (data[requiredParams[i]] == undefined) {
                 return res.status(400).send({
                     status: false,
                     message: `${requiredParams[i]} field is required`

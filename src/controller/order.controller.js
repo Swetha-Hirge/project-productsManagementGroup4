@@ -9,6 +9,14 @@ const createOrder = async (req, res) => {
     try {
         const data = req.body;
         const { items } = data;
+        const keys = Object.keys(data);
+        if (keys.length == 0) {
+            return res.status(400).send({
+                status: false,
+                message: "Body should not be an empty"
+            });
+        }
+
         let totalQuantity = 0;
         items.forEach((productObj) => {
             totalQuantity += productObj.quantity;

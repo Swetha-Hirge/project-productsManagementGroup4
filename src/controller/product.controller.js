@@ -68,8 +68,9 @@ const getProudcts = async (req, res) => {
     try {
         const data = req.query;
         const keys = Object.keys(data);
+        let priceSort = 1;
         if (keys.length > 0) {
-            const requiredParams = ['size', 'name', 'priceGreaterThan', 'priceLessThan'];
+            const requiredParams = ['size', 'name', 'priceGreaterThan', 'priceLessThan', 'priceSort'];
             let status = false;
             for (let i = 0; i < keys.length; i++) {
                 if (!requiredParams.includes(keys[i])) {
@@ -85,6 +86,16 @@ const getProudcts = async (req, res) => {
                     status: false,
                     message: `Only these Query Params are allowed [${requiredParams.join(", ")}]`
                 });
+            }
+
+            if (req.query.priceSort) {
+                if (req.query.priceSort != 1 && req.query.priceSort != -1) {
+                    return res.status(400).send({
+                        status: false,
+                        message: `Price Sort contains only 1 and -1`
+                    });
+                }
+                priceSort = req.query.priceSort;
             }
 
             let queryData = {};
@@ -118,7 +129,7 @@ const getProudcts = async (req, res) => {
             queryData.deletedAt = null;
 
             const filterData = await productSchema.find(queryData).sort({
-                price: 1
+                price: priceSort
             });
             if (filterData.length == 0) {
                 return res.status(404).send({
@@ -140,7 +151,7 @@ const getProudcts = async (req, res) => {
                 isDeleted: false,
                 deletedAt: null
             }).sort({
-                price: 1
+                price: priceSort
             });
             if (fetchAllProducts.length == 0) {
                 return res.status(404).send({
@@ -343,13 +354,10 @@ const deleteProductById = async (req, res) => {
         const deleteRes = await productSchema.findByIdAndUpdate(productId, {
             isDeleted: true,
             deletedAt: new Date()
-        }, {
-            new: true
         });
         return res.status(200).send({
             status: true,
-            message: `Delete success`,
-            data: deleteRes
+            message: `Delete success`
         });
     } catch (error) {
         return res.status(500).send({

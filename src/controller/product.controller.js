@@ -226,7 +226,7 @@ const updateProductById = async (req, res) => {
         }
 
         if (keys.length == 0) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: false,
                 message: "No any changes"
             });

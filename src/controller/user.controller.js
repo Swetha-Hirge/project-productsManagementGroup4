@@ -225,7 +225,7 @@ const updateUserProfile = async (req, res) => {
         const file = req.files;
 
         if (keys.length == 0) {
-            return res.status(400).send({
+            return res.status(200).send({
                 status: false,
                 message: "No any changes"
             });

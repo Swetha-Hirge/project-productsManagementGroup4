@@ -70,6 +70,7 @@ const createCart = async (req, res) => {
                     isDeleted: false,
                     deletedAt: null
                 });
+                console.log(productRes)
 
                 if (!productRes) {
                     return res.status(400).send({
